@@ -9,8 +9,13 @@ import 'package:gal/gal.dart';
 import 'package:share_plus/share_plus.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const AIPhotoEditorApp());
 }
+
+// ============================================================
+// APP
+// ============================================================
 
 class AIPhotoEditorApp extends StatelessWidget {
   const AIPhotoEditorApp({super.key});
@@ -21,8 +26,8 @@ class AIPhotoEditorApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'AI Photo Editor',
       theme: ThemeData(
-        brightness: Brightness.dark,
         useMaterial3: true,
+        brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF09090D),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF8B5CF6),
@@ -35,7 +40,7 @@ class AIPhotoEditorApp extends StatelessWidget {
 }
 
 // ============================================================
-// HOME
+// HOME SCREEN
 // ============================================================
 
 class HomeScreen extends StatefulWidget {
@@ -48,33 +53,33 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ImagePicker _picker = ImagePicker();
 
-  Future<void> pickImage(ImageSource source) async {
+  Future<void> _pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(
+      final XFile? picked = await _picker.pickImage(
         source: source,
-        imageQuality: 95,
+        imageQuality: 100,
       );
 
-      if (image == null) return;
+      if (picked == null || !mounted) {
+        return;
+      }
 
-      if (!mounted) return;
+      final file = File(picked.path);
 
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => EditorScreen(
-            imageFile: File(image.path),
-          ),
+          builder: (_) => EditorScreen(file: file),
         ),
       );
     } catch (e) {
-      if (!mounted) return;
-
-      showMessage('Could not open image.');
+      _showMessage('Could not open photo.');
     }
   }
 
-  void showMessage(String text) {
+  void _showMessage(String text) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(text),
@@ -83,21 +88,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void openPicker() {
+  void _openPicker() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF17171F),
+      backgroundColor: const Color(0xFF17171E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(28),
         ),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               20,
-              16,
+              18,
               20,
               28,
             ),
@@ -109,52 +114,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 5,
                   decoration: BoxDecoration(
                     color: Colors.white24,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
                 const Text(
                   'Choose a Photo',
                   style: TextStyle(
                     fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 20),
-                ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.photo_library),
-                  ),
-                  title: const Text(
-                    'Gallery',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Choose an existing photo',
-                  ),
+
+                const SizedBox(height: 22),
+
+                _PickerOption(
+                  icon: Icons.photo_library_rounded,
+                  title: 'Photo Library',
+                  subtitle: 'Choose an existing photo',
                   onTap: () {
-                    Navigator.pop(context);
-                    pickImage(ImageSource.gallery);
+                    Navigator.pop(sheetContext);
+                    _pickImage(ImageSource.gallery);
                   },
                 ),
-                ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.camera_alt),
-                  ),
-                  title: const Text(
-                    'Camera',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Take a new photo',
-                  ),
+
+                const SizedBox(height: 10),
+
+                _PickerOption(
+                  icon: Icons.camera_alt_rounded,
+                  title: 'Camera',
+                  subtitle: 'Take a new photo',
                   onTap: () {
-                    Navigator.pop(context);
-                    pickImage(ImageSource.camera);
+                    Navigator.pop(sheetContext);
+                    _pickImage(ImageSource.camera);
                   },
                 ),
               ],
@@ -169,8 +163,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            28,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -178,10 +177,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(17),
+                      borderRadius: BorderRadius.circular(16),
                       gradient: const LinearGradient(
                         colors: [
                           Color(0xFF8B5CF6),
@@ -190,11 +189,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     child: const Icon(
-                      Icons.auto_awesome,
-                      size: 28,
+                      Icons.auto_awesome_rounded,
+                      size: 27,
                     ),
                   ),
+
                   const SizedBox(width: 14),
+
                   const Expanded(
                     child: Text(
                       'AI Photo Editor',
@@ -204,9 +205,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
+
                   IconButton(
                     onPressed: () {
-                      showMessage('Settings coming soon.');
+                      _showMessage('Settings coming soon.');
                     },
                     icon: const Icon(
                       Icons.settings_outlined,
@@ -221,12 +223,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Create something\namazing.',
                 style: TextStyle(
                   fontSize: 40,
-                  height: 1.05,
+                  height: 1.04,
                   fontWeight: FontWeight.w900,
+                  letterSpacing: -1,
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               Text(
                 'Edit your photos with powerful tools.',
@@ -236,22 +239,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(height: 35),
 
-              // FEATURES
+              // FEATURE CARDS
               Row(
                 children: [
                   Expanded(
-                    child: FeatureCard(
-                      icon: Icons.auto_awesome,
+                    child: _FeatureCard(
+                      icon: Icons.auto_awesome_rounded,
                       title: 'AI Enhance',
-                      subtitle: 'Improve photo',
+                      subtitle: 'One tap enhance',
                     ),
                   ),
+
                   const SizedBox(width: 12),
+
                   Expanded(
-                    child: FeatureCard(
-                      icon: Icons.layers_clear,
+                    child: _FeatureCard(
+                      icon: Icons.layers_clear_rounded,
                       title: 'Remove BG',
                       subtitle: 'Coming soon',
                     ),
@@ -261,20 +266,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 18),
 
-              // PICK BUTTON
+              // CHOOSE PHOTO
               SizedBox(
                 width: double.infinity,
                 height: 62,
                 child: FilledButton.icon(
-                  onPressed: openPicker,
+                  onPressed: _openPicker,
                   icon: const Icon(
-                    Icons.add_photo_alternate,
+                    Icons.add_photo_alternate_rounded,
                   ),
                   label: const Text(
                     'Choose a Photo',
                     style: TextStyle(
                       fontSize: 17,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   style: FilledButton.styleFrom(
@@ -285,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 18),
 
               Center(
                 child: Text(
@@ -305,16 +310,95 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================
+// PICKER OPTION
+// ============================================================
+
+class _PickerOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _PickerOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF22222B),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.all(17),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(
+                  icon,
+                  color: const Color(0xFFA78BFA),
+                ),
+              ),
+
+              const SizedBox(width: 15),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.45),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white38,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
 // FEATURE CARD
 // ============================================================
 
-class FeatureCard extends StatelessWidget {
+class _FeatureCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
 
-  const FeatureCard({
-    super.key,
+  const _FeatureCard({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -323,12 +407,12 @@ class FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
         color: const Color(0xFF15151C),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withOpacity(0.07),
+          color: Colors.white.withOpacity(0.06),
         ),
       ),
       child: Column(
@@ -336,22 +420,27 @@ class FeatureCard extends StatelessWidget {
         children: [
           Icon(
             icon,
-            color: const Color(0xFFA78BFA),
             size: 28,
+            color: const Color(0xFFA78BFA),
           ),
-          const SizedBox(height: 14),
+
+          const SizedBox(height: 16),
+
           Text(
             title,
             style: const TextStyle(
-              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
             ),
           ),
+
           const SizedBox(height: 4),
+
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 12,
-              color: Colors.white.withOpacity(0.45),
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.42),
             ),
           ),
         ],
@@ -361,23 +450,47 @@ class FeatureCard extends StatelessWidget {
 }
 
 // ============================================================
-// EDITOR
+// EDITOR SCREEN
 // ============================================================
 
 class EditorScreen extends StatefulWidget {
-  final File imageFile;
+  final File file;
 
   const EditorScreen({
     super.key,
-    required this.imageFile,
+    required this.file,
   });
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
 }
 
+// ============================================================
+// EDITOR HISTORY STATE
+// ============================================================
+
+class _EditHistory {
+  final double brightness;
+  final double contrast;
+  final double saturation;
+  final int filter;
+  final int rotation;
+
+  const _EditHistory({
+    required this.brightness,
+    required this.contrast,
+    required this.saturation,
+    required this.filter,
+    required this.rotation,
+  });
+}
+
+// ============================================================
+// EDITOR STATE
+// ============================================================
+
 class _EditorScreenState extends State<EditorScreen> {
-  final GlobalKey previewKey = GlobalKey();
+  final GlobalKey _previewKey = GlobalKey();
 
   double brightness = 0;
   double contrast = 1;
@@ -386,185 +499,52 @@ class _EditorScreenState extends State<EditorScreen> {
   int filter = 0;
   int rotation = 0;
 
-  // ==========================================================
-  // COLOR
-  // ==========================================================
+  final List<_EditHistory> _history = [];
 
-  ColorFilter getColorFilter() {
-    // ORIGINAL
-    if (filter == 0) {
-      return ColorFilter.matrix(
-        createColorMatrix(),
-      );
-    }
+  // ----------------------------------------------------------
+  // SAVE HISTORY
+  // ----------------------------------------------------------
 
-    // WARM
-    if (filter == 1) {
-      return const ColorFilter.matrix(
-        [
-          1.15,
-          0,
-          0,
-          0,
-          8,
-          0,
-          1.02,
-          0,
-          0,
-          4,
-          0,
-          0,
-          0.92,
-          0,
-          -2,
-          0,
-          0,
-          0,
-          1,
-          0,
-        ],
-      );
-    }
-
-    // COOL
-    if (filter == 2) {
-      return const ColorFilter.matrix(
-        [
-          0.92,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1.02,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1.15,
-          0,
-          5,
-          0,
-          0,
-          0,
-          1,
-          0,
-        ],
-      );
-    }
-
-    // BLACK & WHITE
-    return const ColorFilter.matrix(
-      [
-        0.2126,
-        0.7152,
-        0.0722,
-        0,
-        0,
-        0.2126,
-        0.7152,
-        0.0722,
-        0,
-        0,
-        0.2126,
-        0.7152,
-        0.0722,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-      ],
-    );
-  }
-
-  List<double> createColorMatrix() {
-    final double b = brightness * 255;
-    final double c = contrast;
-    final double s = saturation;
-
-    const double sr = 0.2126;
-    const double sg = 0.7152;
-    const double sb = 0.0722;
-
-    final double inv = 1 - s;
-
-    final double r = inv * sr;
-    final double g = inv * sg;
-    final double bl = inv * sb;
-
-    return [
-      (r + s) * c,
-      g * c,
-      bl * c,
-      0,
-      b,
-      r * c,
-      (g + s) * c,
-      bl * c,
-      0,
-      b,
-      r * c,
-      g * c,
-      (bl + s) * c,
-      0,
-      b,
-      0,
-      0,
-      0,
-      1,
-      0,
-    ];
-  }
-
-  // ==========================================================
-  // PREVIEW
-  // ==========================================================
-
-  Widget buildPreview() {
-    return RepaintBoundary(
-      key: previewKey,
-      child: Container(
-        color: Colors.black,
-        alignment: Alignment.center,
-        child: ColorFiltered(
-          colorFilter: getColorFilter(),
-          child: RotatedBox(
-            quarterTurns: rotation,
-            child: Image.file(
-              widget.imageFile,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) {
-                return const Icon(
-                  Icons.broken_image,
-                  size: 60,
-                );
-              },
-            ),
-          ),
-        ),
+  void _saveHistory() {
+    _history.add(
+      _EditHistory(
+        brightness: brightness,
+        contrast: contrast,
+        saturation: saturation,
+        filter: filter,
+        rotation: rotation,
       ),
     );
   }
 
-  // ==========================================================
-  // ROTATE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // UNDO
+  // ----------------------------------------------------------
 
-  void rotateImage() {
+  void _undo() {
+    if (_history.isEmpty) {
+      _message('Nothing to undo.');
+      return;
+    }
+
+    final previous = _history.removeLast();
+
     setState(() {
-      rotation = (rotation + 1) % 4;
+      brightness = previous.brightness;
+      contrast = previous.contrast;
+      saturation = previous.saturation;
+      filter = previous.filter;
+      rotation = previous.rotation;
     });
   }
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // RESET
-  // ==========================================================
+  // ----------------------------------------------------------
 
-  void resetEditor() {
+  void _reset() {
+    _saveHistory();
+
     setState(() {
       brightness = 0;
       contrast = 1;
@@ -574,144 +554,359 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
-  // ==========================================================
-  // CAPTURE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // ROTATE
+  // ----------------------------------------------------------
 
-  Future<Uint8List?> captureImage() async {
+  void _rotate() {
+    _saveHistory();
+
+    setState(() {
+      rotation = (rotation + 1) % 4;
+    });
+  }
+
+  // ----------------------------------------------------------
+  // FILTER
+  // ----------------------------------------------------------
+
+  void _setFilter(int value) {
+    if (filter == value) return;
+
+    _saveHistory();
+
+    setState(() {
+      filter = value;
+    });
+  }
+
+  // ----------------------------------------------------------
+  // AI ENHANCE
+  // ----------------------------------------------------------
+
+  void _aiEnhance() {
+    _saveHistory();
+
+    setState(() {
+      brightness = 0.04;
+      contrast = 1.12;
+      saturation = 1.08;
+      filter = 0;
+    });
+
+    _message('AI Enhance applied.');
+  }
+
+  // ----------------------------------------------------------
+  // COLOR MATRIX
+  // ----------------------------------------------------------
+
+  List<double> _matrix() {
+    final b = brightness * 255;
+    final c = contrast;
+    final s = saturation;
+
+    const red = 0.2126;
+    const green = 0.7152;
+    const blue = 0.0722;
+
+    final inv = 1 - s;
+
+    final r = inv * red;
+    final g = inv * green;
+    final bl = inv * blue;
+
+    return [
+      (r + s) * c,
+      g * c,
+      bl * c,
+      0,
+      b,
+
+      r * c,
+      (g + s) * c,
+      bl * c,
+      0,
+      b,
+
+      r * c,
+      g * c,
+      (bl + s) * c,
+      0,
+      b,
+
+      0,
+      0,
+      0,
+      1,
+      0,
+    ];
+  }
+
+  // ----------------------------------------------------------
+  // FILTER MATRIX
+  // ----------------------------------------------------------
+
+  List<double> _filterMatrix() {
+    // Original
+    if (filter == 0) {
+      return _matrix();
+    }
+
+    // Warm
+    if (filter == 1) {
+      return [
+        1.12,
+        0,
+        0,
+        0,
+        8,
+
+        0,
+        1.02,
+        0,
+        0,
+        3,
+
+        0,
+        0,
+        0.88,
+        0,
+        -3,
+
+        0,
+        0,
+        0,
+        1,
+        0,
+      ];
+    }
+
+    // Cool
+    if (filter == 2) {
+      return [
+        0.90,
+        0,
+        0,
+        0,
+        -2,
+
+        0,
+        1.02,
+        0,
+        0,
+        0,
+
+        0,
+        0,
+        1.12,
+        0,
+        8,
+
+        0,
+        0,
+        0,
+        1,
+        0,
+      ];
+    }
+
+    // Black & White
+    if (filter == 3) {
+      return [
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+
+        0,
+        0,
+        0,
+        1,
+        0,
+      ];
+    }
+
+    // Vintage
+    if (filter == 4) {
+      return [
+        0.85,
+        0.15,
+        0.05,
+        0,
+        8,
+
+        0.08,
+        0.78,
+        0.08,
+        0,
+        5,
+
+        0.03,
+        0.12,
+        0.65,
+        0,
+        -2,
+
+        0,
+        0,
+        0,
+        1,
+        0,
+      ];
+    }
+
+    // High contrast
+    if (filter == 5) {
+      return [
+        1.25,
+        0,
+        0,
+        0,
+        -25,
+
+        0,
+        1.25,
+        0,
+        0,
+        -25,
+
+        0,
+        0,
+        1.25,
+        0,
+        -25,
+
+        0,
+        0,
+        0,
+        1,
+        0,
+      ];
+    }
+
+    return _matrix();
+  }
+
+  // ----------------------------------------------------------
+  // CAPTURE PREVIEW
+  // ----------------------------------------------------------
+
+  Future<Uint8List?> _captureImage() async {
     try {
-      final RenderObject? object =
-          previewKey.currentContext?.findRenderObject();
+      final renderObject =
+          _previewKey.currentContext?.findRenderObject();
 
-      if (object is! RenderRepaintBoundary) {
+      if (renderObject is! RenderRepaintBoundary) {
         return null;
       }
 
-      final ui.Image image = await object.toImage(
+      final ui.Image image = await renderObject.toImage(
         pixelRatio: 2.0,
       );
 
-      final ByteData? data = await image.toByteData(
+      final ByteData? byteData =
+          await image.toByteData(
         format: ui.ImageByteFormat.png,
       );
 
-      return data?.buffer.asUint8List();
+      if (byteData == null) {
+        return null;
+      }
+
+      return byteData.buffer.asUint8List();
     } catch (_) {
       return null;
     }
   }
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // SAVE
-  // ==========================================================
+  // ----------------------------------------------------------
 
-  Future<void> saveImage() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
+  Future<void> _saveImage() async {
+    final bytes = await _captureImage();
+
+    if (bytes == null) {
+      _message('Could not create image.');
+      return;
+    }
 
     try {
-      final Uint8List? bytes = await captureImage();
+      final access = await Gal.requestAccess();
 
-      if (!mounted) return;
-
-      Navigator.pop(context);
-
-      if (bytes == null) {
-        showMessage('Could not export image.');
+      if (!access) {
+        _message('Gallery permission denied.');
         return;
       }
-
-      final bool permission =
-          await Gal.requestAccess();
-
-      if (!permission) {
-        showMessage('Gallery permission denied.');
-        return;
-      }
-
-      final String name =
-          'ai_photo_${DateTime.now().millisecondsSinceEpoch}';
 
       await Gal.putImageBytes(
         bytes,
         album: 'AI Photo Editor',
-        name: name,
+        name:
+            'ai_photo_${DateTime.now().millisecondsSinceEpoch}',
       );
 
-      showMessage('Photo saved successfully!');
+      _message('Saved to Gallery.');
     } catch (_) {
-      if (mounted) {
-        Navigator.pop(context);
-        showMessage('Could not save photo.');
-      }
+      _message('Could not save image.');
     }
   }
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // SHARE
-  // ==========================================================
+  // ----------------------------------------------------------
 
-  Future<void> shareImage() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
+  Future<void> _shareImage() async {
+    final bytes = await _captureImage();
+
+    if (bytes == null) {
+      _message('Could not create image.');
+      return;
+    }
 
     try {
-      final Uint8List? bytes = await captureImage();
+      final directory = Directory.systemTemp;
 
-      if (!mounted) return;
+      final fileName =
+          'ai_photo_${DateTime.now().millisecondsSinceEpoch}.png';
 
-      Navigator.pop(context);
+      final path = '${directory.path}/$fileName';
 
-      if (bytes == null) {
-        showMessage('Could not export image.');
-        return;
-      }
-
-      final Directory directory =
-          Directory.systemTemp;
-
-      final String path =
-          '${directory.path}/ai_photo_${DateTime.now().millisecondsSinceEpoch}.png';
-
-      final File file = File(path);
+      final file = File(path);
 
       await file.writeAsBytes(bytes);
 
-      await SharePlus.instance.share(
-        ShareParams(
-          text: 'Edited with AI Photo Editor',
-          files: [
-            XFile(path),
-          ],
-        ),
+      // Compatible with share_plus 7.x
+      await Share.shareXFiles(
+        [
+          XFile(path),
+        ],
+        text: 'Edited with AI Photo Editor',
       );
     } catch (_) {
-      if (mounted) {
-        Navigator.pop(context);
-        showMessage('Could not share photo.');
-      }
+      _message('Could not share image.');
     }
   }
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // MESSAGE
-  // ==========================================================
+  // ----------------------------------------------------------
 
-  void showMessage(String text) {
+  void _message(String text) {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -722,50 +917,52 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  // ==========================================================
-  // FILTER BUTTON
-  // ==========================================================
+  // ----------------------------------------------------------
+  // PREVIEW
+  // ----------------------------------------------------------
 
-  Widget filterButton(
-    String name,
-    int value,
-  ) {
-    final bool selected = filter == value;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          filter = value;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(
-          milliseconds: 180,
-        ),
-        width: 82,
-        decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFF8B5CF6)
-              : const Color(0xFF1A1A22),
-          borderRadius: BorderRadius.circular(16),
-        ),
+  Widget _preview() {
+    return RepaintBoundary(
+      key: _previewKey,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: Colors.black,
         alignment: Alignment.center,
-        child: Text(
-          name,
-          style: TextStyle(
-            fontWeight:
-                selected ? FontWeight.bold : FontWeight.normal,
+        child: ColorFiltered(
+          colorFilter: ColorFilter.matrix(
+            _filterMatrix(),
+          ),
+          child: RotatedBox(
+            quarterTurns: rotation,
+            child: Image.file(
+              widget.file,
+              fit: BoxFit.contain,
+              errorBuilder: (
+                context,
+                error,
+                stackTrace,
+              ) {
+                return const Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    size: 70,
+                    color: Colors.white38,
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // SLIDER
-  // ==========================================================
+  // ----------------------------------------------------------
 
-  Widget editorSlider({
+  Widget _slider({
     required String title,
     required double value,
     required double min,
@@ -779,7 +976,8 @@ class _EditorScreenState extends State<EditorScreen> {
             Text(
               title,
               style: const TextStyle(
-                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const Spacer(),
@@ -792,23 +990,90 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
           ],
         ),
+
         Slider(
           value: value,
           min: min,
           max: max,
-          onChanged: onChanged,
+          onChanged: (newValue) {
+            setState(() {
+              onChanged(newValue);
+            });
+          },
         ),
       ],
     );
   }
 
-  // ==========================================================
-  // TOOL
-  // ==========================================================
+  // ----------------------------------------------------------
+  // FILTER LIST
+  // ----------------------------------------------------------
 
-  Widget toolButton({
+  Widget _filters() {
+    final items = [
+      ('Original', 0),
+      ('Warm', 1),
+      ('Cool', 2),
+      ('B&W', 3),
+      ('Vintage', 4),
+      ('Contrast', 5),
+    ];
+
+    return SizedBox(
+      height: 72,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, __) {
+          return const SizedBox(width: 9);
+        },
+        itemBuilder: (context, index) {
+          final item = items[index];
+
+          final selected = filter == item.$2;
+
+          return GestureDetector(
+            onTap: () {
+              _setFilter(item.$2);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              width: 82,
+              decoration: BoxDecoration(
+                color: selected
+                    ? const Color(0xFF8B5CF6)
+                    : const Color(0xFF202027),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: selected
+                      ? const Color(0xFFA78BFA)
+                      : Colors.white.withOpacity(0.05),
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                item.$1,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected
+                      ? FontWeight.w800
+                      : FontWeight.w500,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------
+  // TOOL BUTTON
+  // ----------------------------------------------------------
+
+  Widget _toolButton({
     required IconData icon,
-    required String title,
+    required String label,
     required VoidCallback onTap,
   }) {
     return Expanded(
@@ -823,13 +1088,16 @@ class _EditorScreenState extends State<EditorScreen> {
             children: [
               Icon(
                 icon,
-                size: 25,
+                size: 24,
               ),
+
               const SizedBox(height: 6),
+
               Text(
-                title,
+                label,
                 style: const TextStyle(
                   fontSize: 11,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -839,33 +1107,45 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // BUILD
-  // ==========================================================
+  // ----------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
         title: const Text(
           'Editor',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
           ),
         ),
-        backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            onPressed: resetEditor,
+            onPressed: _undo,
+            tooltip: 'Undo',
+            icon: const Icon(
+              Icons.undo_rounded,
+            ),
+          ),
+          IconButton(
+            onPressed: _reset,
+            tooltip: 'Reset',
             icon: const Icon(
               Icons.refresh_rounded,
             ),
           ),
         ],
       ),
+
       body: Column(
         children: [
-          // IMAGE PREVIEW
+          // --------------------------------------------------
+          // IMAGE
+          // --------------------------------------------------
+
           Expanded(
             flex: 5,
             child: Padding(
@@ -877,12 +1157,15 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(22),
-                child: buildPreview(),
+                child: _preview(),
               ),
             ),
           ),
 
-          // EDIT CONTROLS
+          // --------------------------------------------------
+          // CONTROLS
+          // --------------------------------------------------
+
           Expanded(
             flex: 5,
             child: Container(
@@ -894,52 +1177,48 @@ class _EditorScreenState extends State<EditorScreen> {
                 12,
               ),
               decoration: const BoxDecoration(
-                color: Color(0xFF121218),
+                color: Color(0xFF121219),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(28),
                 ),
               ),
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
-                    editorSlider(
+                    // BRIGHTNESS
+                    _slider(
                       title: 'Brightness',
                       value: brightness,
                       min: -0.5,
                       max: 0.5,
                       onChanged: (value) {
-                        setState(() {
-                          brightness = value;
-                        });
+                        brightness = value;
                       },
                     ),
 
-                    editorSlider(
+                    // CONTRAST
+                    _slider(
                       title: 'Contrast',
                       value: contrast,
                       min: 0.5,
                       max: 1.8,
                       onChanged: (value) {
-                        setState(() {
-                          contrast = value;
-                        });
+                        contrast = value;
                       },
                     ),
 
-                    editorSlider(
+                    // SATURATION
+                    _slider(
                       title: 'Saturation',
                       value: saturation,
                       min: 0,
                       max: 2,
                       onChanged: (value) {
-                        setState(() {
-                          saturation = value;
-                        });
+                        saturation = value;
                       },
                     ),
 
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
 
                     const Align(
                       alignment: Alignment.centerLeft,
@@ -947,122 +1226,88 @@ class _EditorScreenState extends State<EditorScreen> {
                         'Filters',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
 
                     const SizedBox(height: 10),
 
-                    SizedBox(
-                      height: 82,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          filterButton(
-                            'Original',
-                            0,
-                          ),
-                          const SizedBox(width: 10),
-                          filterButton(
-                            'Warm',
-                            1,
-                          ),
-                          const SizedBox(width: 10),
-                          filterButton(
-                            'Cool',
-                            2,
-                          ),
-                          const SizedBox(width: 10),
-                          filterButton(
-                            'B&W',
-                            3,
-                          ),
-                        ],
-                      ),
-                    ),
+                    _filters(),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
 
+                    // TOOLS
                     Row(
                       children: [
-                        toolButton(
-                          icon: Icons.rotate_right,
-                          title: 'Rotate',
-                          onTap: rotateImage,
+                        _toolButton(
+                          icon: Icons.rotate_right_rounded,
+                          label: 'Rotate',
+                          onTap: _rotate,
                         ),
-                        toolButton(
-                          icon: Icons.auto_awesome,
-                          title: 'AI Enhance',
-                          onTap: () {
-                            showMessage(
-                              'AI Enhance coming soon.',
-                            );
-                          },
+
+                        _toolButton(
+                          icon: Icons.auto_awesome_rounded,
+                          label: 'AI Enhance',
+                          onTap: _aiEnhance,
                         ),
-                        toolButton(
-                          icon: Icons.layers_clear,
-                          title: 'Remove BG',
+
+                        _toolButton(
+                          icon: Icons.layers_clear_rounded,
+                          label: 'Remove BG',
                           onTap: () {
-                            showMessage(
-                              'Remove Background coming soon.',
+                            _message(
+                              'Background removal coming soon.',
                             );
                           },
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
+                    // SHARE + SAVE
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: shareImage,
+                            onPressed: _shareImage,
                             icon: const Icon(
-                              Icons.share,
+                              Icons.share_rounded,
                             ),
                             label: const Text(
                               'Share',
                             ),
-                            style:
-                                OutlinedButton.styleFrom(
+                            style: OutlinedButton.styleFrom(
                               minimumSize:
-                                  const Size.fromHeight(
-                                54,
-                              ),
+                                  const Size.fromHeight(54),
                               shape:
                                   RoundedRectangleBorder(
                                 borderRadius:
-                                    BorderRadius.circular(
-                                  16,
-                                ),
+                                    BorderRadius.circular(16),
                               ),
                             ),
                           ),
                         ),
+
                         const SizedBox(width: 12),
+
                         Expanded(
                           child: FilledButton.icon(
-                            onPressed: saveImage,
+                            onPressed: _saveImage,
                             icon: const Icon(
-                              Icons.download,
+                              Icons.download_rounded,
                             ),
                             label: const Text(
                               'Save',
                             ),
-                            style:
-                                FilledButton.styleFrom(
+                            style: FilledButton.styleFrom(
                               minimumSize:
-                                  const Size.fromHeight(
-                                54,
-                              ),
+                                  const Size.fromHeight(54),
                               shape:
                                   RoundedRectangleBorder(
                                 borderRadius:
-                                    BorderRadius.circular(
-                                  16,
-                                ),
+                                    BorderRadius.circular(16),
                               ),
                             ),
                           ),
@@ -1070,7 +1315,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
